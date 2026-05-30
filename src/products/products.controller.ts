@@ -18,8 +18,8 @@ export class ProductsController {
 
   @Get()
   @ApiOperation({ summary: 'Ambil semua produk' })
-  findAll(@Query('category') category?: string) {
-    return this.productsService.findAll(category);
+  findAll() {
+    return this.productsService.findAll();
   }
 
   @Get(':id')
