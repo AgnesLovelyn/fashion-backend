@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
+import { CloudinaryService } from 'cloudinary/cloudinary.service';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
@@ -11,7 +11,10 @@ import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes } from '@nes
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Ambil semua produk' })
@@ -46,26 +49,15 @@ export class ProductsController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads/products',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, 'product-' + uniqueSuffix + extname(file.originalname));
-      },
-    }),
-    fileFilter: (req, file, cb) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-        return cb(new Error('Hanya file gambar yang diizinkan!'), false);
-      }
-      cb(null, true);
-    },
-  }))
-  create(
+    @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
+  async create(
     @Body() body: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const imageUrl = file ? `/uploads/products/${file.filename}` : undefined;
+    let imageUrl: string | undefined;
+    if (file) {
+      imageUrl = await this.cloudinaryService.uploadImage(file);
+    }
     return this.productsService.create({
       ...body,
       price: Number(body.price),
@@ -98,28 +90,16 @@ export class ProductsController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads/products',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, 'product-' + uniqueSuffix + extname(file.originalname));
-      },
-    }),
-    fileFilter: (req, file, cb) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-        return cb(new Error('Hanya file gambar yang diizinkan!'), false);
-      }
-      cb(null, true);
-    },
-  }))
-  update(
+ @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
+  async update(
     @Param('id') id: string,
     @Body() body: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
     const data: any = { ...body };
-    if (file) data.imageUrl = `/uploads/products/${file.filename}`;
+    if (file) {
+      data.imageUrl = await this.cloudinaryService.uploadImage(file);
+    }
     if (body.price) data.price = Number(body.price);
     if (body.stock) data.stock = Number(body.stock);
     if (body.categoryId) data.categoryId = Number(body.categoryId);
