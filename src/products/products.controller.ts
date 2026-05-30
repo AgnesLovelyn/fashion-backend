@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
 import { Roles } from '../jwt/roles.decorator';
-import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 
 @ApiTags('Products')
 @Controller('products')
@@ -12,8 +15,8 @@ export class ProductsController {
 
   @Get()
   @ApiOperation({ summary: 'Ambil semua produk' })
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query('category') category?: string) {
+    return this.productsService.findAll(category);
   }
 
   @Get(':id')
@@ -27,30 +30,51 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Tambah produk baru (admin)' })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
-      example: {
-        name: 'Hoodie Zipper',
-        description: 'Hoodie zipper oversize bahan fleece premium',
-        price: 275000,
-        stock: 90,
-        categoryId: 1,
-        isNew: true,
-        isTrending: true,
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        description: { type: 'string' },
+        price: { type: 'number' },
+        stock: { type: 'number' },
+        categoryId: { type: 'number' },
+        isNew: { type: 'boolean' },
+        isTrending: { type: 'boolean' },
+        image: { type: 'string', format: 'binary' },
       },
     },
   })
-  create(@Body() body: {
-    name: string;
-    description?: string;
-    price: number;
-    stock: number;
-    imageUrl?: string;
-    categoryId: number;
-    isNew?: boolean;
-    isTrending?: boolean;
-  }) {
-    return this.productsService.create(body);
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/products',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, 'product-' + uniqueSuffix + extname(file.originalname));
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+        return cb(new Error('Hanya file gambar yang diizinkan!'), false);
+      }
+      cb(null, true);
+    },
+  }))
+  create(
+    @Body() body: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const imageUrl = file ? `/uploads/products/${file.filename}` : undefined;
+    return this.productsService.create({
+      ...body,
+      price: Number(body.price),
+      stock: Number(body.stock),
+      categoryId: Number(body.categoryId),
+      isNew: body.isNew === 'true',
+      isTrending: body.isTrending === 'true',
+      imageUrl,
+    });
   }
 
   @Put(':id')
@@ -58,18 +82,50 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update produk (admin)' })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
-      example: {
-        name: 'Hoodie Zipper Updated',
-        price: 300000,
-        stock: 50,
-        isTrending: false,
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        description: { type: 'string' },
+        price: { type: 'number' },
+        stock: { type: 'number' },
+        categoryId: { type: 'number' },
+        isNew: { type: 'boolean' },
+        isTrending: { type: 'boolean' },
+        image: { type: 'string', format: 'binary' },
       },
     },
   })
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.productsService.update(+id, body);
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/products',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, 'product-' + uniqueSuffix + extname(file.originalname));
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+        return cb(new Error('Hanya file gambar yang diizinkan!'), false);
+      }
+      cb(null, true);
+    },
+  }))
+  update(
+    @Param('id') id: string,
+    @Body() body: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const data: any = { ...body };
+    if (file) data.imageUrl = `/uploads/products/${file.filename}`;
+    if (body.price) data.price = Number(body.price);
+    if (body.stock) data.stock = Number(body.stock);
+    if (body.categoryId) data.categoryId = Number(body.categoryId);
+    if (body.isNew !== undefined) data.isNew = body.isNew === 'true';
+    if (body.isTrending !== undefined) data.isTrending = body.isTrending === 'true';
+    return this.productsService.update(+id, data);
   }
 
   @Delete(':id')
@@ -94,11 +150,7 @@ export class ProductsController {
   @ApiOperation({ summary: 'Tambah varian produk (admin)' })
   @ApiBody({
     schema: {
-      example: {
-        size: 'M',
-        color: 'Black',
-        stock: 15,
-      },
+      example: { size: 'M', color: 'Black', stock: 15 },
     },
   })
   addVariant(
