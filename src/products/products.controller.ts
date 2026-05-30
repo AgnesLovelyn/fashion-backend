@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { CloudinaryService } from 'cloudinary/cloudinary.service';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
@@ -17,10 +17,10 @@ export class ProductsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Ambil semua produk' })
-  findAll() {
-    return this.productsService.findAll();
-  }
+@ApiOperation({ summary: 'Ambil semua produk' })
+findAll(@Query('category') category?: string) {
+  return this.productsService.findAll(category);
+}
 
   @Get(':id')
   @ApiOperation({ summary: 'Ambil produk by ID' })
