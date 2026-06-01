@@ -79,4 +79,14 @@ async getVariants(productId: number) {
     where: { productId },
   });
 }
+async updateVariant(variantId: number, data: Partial<{
+  size: string;
+  color: string;
+  stock: number;
+  imageUrl: string;
+}>) {
+  const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+  if (!variant) throw new NotFoundException('Varian tidak ditemukan');
+  return this.prisma.productVariant.update({ where: { id: variantId }, data });
+}
 }

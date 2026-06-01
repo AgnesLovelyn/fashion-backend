@@ -142,4 +142,36 @@ findAll(
   ) {
     return this.productsService.addVariant(+id, body);
   }
+  
+@Put(':id/variants/:variantId')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
+@ApiOperation({ summary: 'Update varian produk + foto (admin)' })
+@ApiConsumes('multipart/form-data')
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      size: { type: 'string' },
+      color: { type: 'string' },
+      stock: { type: 'number' },
+      image: { type: 'string', format: 'binary' },
+    },
+  },
+})
+@UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
+async updateVariant(
+  @Param('id') id: string,
+  @Param('variantId') variantId: string,
+  @Body() body: any,
+  @UploadedFile() file: Express.Multer.File,
+) {
+  const data: any = { ...body };
+  if (file) {
+    data.imageUrl = await this.cloudinaryService.uploadImage(file);
+  }
+  if (body.stock) data.stock = Number(body.stock);
+  return this.productsService.updateVariant(+variantId, data);
+}
 }
