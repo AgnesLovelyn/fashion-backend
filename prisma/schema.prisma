@@ -26,6 +26,7 @@ model User {
   cartItems CartItem[]
   orders    Order[]
   messages  Message[]
+  wishlists Wishlist[]
 }
 
 enum Role {
@@ -61,6 +62,7 @@ model Product {
   cartItems   CartItem[]
   orderItems  OrderItem[]
   messages    Message[]
+  wishlists   Wishlist[]
 }
 
 // ─── PRODUCT VARIANT (ukuran & warna) ───────────
@@ -153,4 +155,16 @@ model Message{
   user      User    @relation(fields: [userId], references: [id])
   product   Product? @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Wishlist {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId]) //mencegah barang yang sama masuk 2x
 }
