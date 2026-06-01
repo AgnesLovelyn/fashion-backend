@@ -12,59 +12,81 @@ import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
+   // User kirim pesan ke admin
   @Post('send')
-  @ApiOperation({ summary: 'User kirim pesan ke admin' })
+  @ApiOperation({ summary: 'User kirim pesan ke admin (bisa terikat ke produk)' })
   @ApiBody({
     schema: {
       example: {
-        content: 'Halo admin, apakah hoodie zipper tersedia ukuran XL?',
+        content: 'Halo admin, apakah hoodie zipper ini tersedia ukuran XL?',
+        productId:2,
+
       },
     },
   })
   sendMessage(
     @Request() req: any,
-    @Body() body: { content: string },
+    @Body() body: { content: string; productId?: number },
   ) {
-    return this.chatService.sendMessage(req.user.userId, body.content);
+    return this.chatService.sendMessage(req.user.userId, body.content, body.productId,);
   }
 
+  // User lihat percakapannya sendiri (bisa filter by produk)
   @Get('my')
-  @ApiOperation({ summary: 'User lihat percakapannya sendiri' })
-  getMyMessages(@Request() req: any) {
-    return this.chatService.getMyMessages(req.user.userId);
+  @ApiOperation({ summary: 'User lihat pesannya sendiri, bisa filter by productId' })
+  getMyMessages(
+    @Request() req: any,
+    @Query('productId') productId?: string,
+  ) {
+    return this.chatService.getMyMessages(
+      req.user.userId,
+      productId ? +productId : undefined,
+    );
   }
 
+// Admin lihat semua percakapan (bisa filter by produk)
   @Get('all')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Admin lihat semua percakapan' })
-  getAllMessages() {
-    return this.chatService.getAllMessages();
+  @ApiOperation({ summary: 'Admin lihat semua pesan, bisa filter by productId' })
+  getAllMessages(@Query('productId') productId?: string) {
+    return this.chatService.getAllMessages(
+      productId ? +productId : undefined,
+    );
   }
 
+  // Admin lihat percakapan dengan user tertentu (bisa filter by produk)
   @Get('user/:userId')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Admin lihat percakapan user tertentu' })
-  getMessagesByUser(@Param('userId') userId: string) {
-    return this.chatService.getMessagesByUser(+userId);
+  @ApiOperation({ summary: 'Admin lihat percakapan user tertentu, bisa filter by productId' })
+  getMessagesByUser(
+    @Param('userId') userId: string,
+    @Query('productId') productId?: string,
+  ) {
+    return this.chatService.getMessagesByUser(
+      +userId,
+      productId ? +productId : undefined,
+    );
   }
 
+ // Admin balas pesan ke user tertentu
   @Post('reply/:userId')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Admin balas pesan user' })
+  @ApiOperation({ summary: 'Admin balas pesan user, bisa terikat ke produk' })
   @ApiBody({
     schema: {
       example: {
-        content: 'Halo! Untuk ukuran XL stok masih tersedia ya!',
+        content: 'Untuk ukuran XL stok masih tersedia ya!',
+        productId: 2,
       },
     },
   })
   replyMessage(
     @Param('userId') userId: string,
-    @Body() body: { content: string },
-  ) {
-    return this.chatService.replyMessage(+userId, body.content);
+    @Body() body: { content: string; productId?: number },
+  ) {return this.chatService.replyMessage(+userId, body.content, body.productId,
+  );
   }
 }

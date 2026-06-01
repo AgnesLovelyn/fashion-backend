@@ -60,6 +60,7 @@ model Product {
   variants    ProductVariant[]
   cartItems   CartItem[]
   orderItems  OrderItem[]
+  messages    Message[]
 }
 
 // ─── PRODUCT VARIANT (ukuran & warna) ───────────
@@ -148,6 +149,8 @@ model Message{
   content   String
   isAdmin   Boolean @default(false)
   userId    Int
+  productId Int?
   user      User    @relation(fields: [userId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
 }

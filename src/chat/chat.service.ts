@@ -5,45 +5,67 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  // User kirim pesan ke admin
-  async sendMessage(userId: number, content: string) {
+  // User kirim pesan ke admin (terikat ke produk tertentu)
+  async sendMessage(userId: number, content: string, productId?: number) {
     return this.prisma.message.create({
-      data: { userId, content, isAdmin: false },
-      include: { user: { select: { name: true } } },
+      data: { userId, content, isAdmin: false, productId },
+      include: { 
+        user: { select: { name: true } },
+        product: { select: { id: true, name: true } },
+      },
     });
   }
 
-  // Admin balas pesan ke user tertentu
-  async replyMessage(userId: number, content: string) {
+  // Admin balas pesan ke user tertentu (terikat ke produk tertentu)
+  async replyMessage(userId: number, content: string, productId?: number) {
     return this.prisma.message.create({
-      data: { userId, content, isAdmin: true },
-      include: { user: { select: { name: true } } },
+      data: { userId, content, isAdmin: true, productId },
+      include: { 
+        user: { select: { name: true } },
+        product: { select: { id: true, name: true } },
+      },
     });
   }
 
-  // User lihat percakapannya sendiri
-  async getMyMessages(userId: number) {
+  // User lihat percakapannya sendiri (bisa filter by produk)
+  async getMyMessages(userId: number, productId?: number) {
     return this.prisma.message.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(productId ? { productId } : {}),
+      },
       orderBy: { createdAt: 'asc' },
-      include: { user: { select: { name: true } } },
+      include: {
+        user: { select: { name: true } },
+        product: { select: { id: true, name: true } },
+      },
     });
   }
 
-  // Admin lihat semua percakapan (dikelompokkan per user)
-  async getAllMessages() {
+  // Admin lihat semua percakapan 
+  async getAllMessages(productId?: number) {
     return this.prisma.message.findMany({
+      where: productId ? { productId } : {},
       orderBy: { createdAt: 'asc' },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        product: { select: { id: true, name: true } },
+      },
     });
   }
 
-  // Admin lihat percakapan dengan user tertentu
-  async getMessagesByUser(userId: number) {
+  // Admin lihat percakapan dengan user tertentu  (bisa filter by produk)
+  async getMessagesByUser(userId: number, productId?: number) {
     return this.prisma.message.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(productId ? { productId } : {}),
+      },
       orderBy: { createdAt: 'asc' },
-      include: { user: { select: { name: true, email: true } } },
+      include: {
+        user: { select: { name: true, email: true } },
+        product: { select: { id: true, name: true } },
+      },
     });
   }
 }
