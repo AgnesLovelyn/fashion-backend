@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, UseGuards, Request, Param, UseInterceptors, UploadedFile, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards, Request, Param, UseInterceptors, UploadedFile, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
@@ -17,23 +17,31 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles('USER')
-  @ApiOperation({ summary: 'Buat order baru + Upload Bukti QRIS' })
-  @ApiConsumes('multipart/form-data') // Munculin tombol upload di Swagger
-  @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() })) 
-  createOrder(
-    @Request() req: any,
-    @Body() dto: CreateOrderDto,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    // req.user.userId didapat dari JwtAuthGuard
-    return this.ordersService.createOrder(
-      req.user.userId,
-      dto,
-      file,
-    );
+@UseGuards(RolesGuard)
+@Roles('USER')
+@ApiOperation({ summary: 'Buat order baru + Upload Bukti QRIS' })
+@ApiConsumes('multipart/form-data')
+@UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
+async createOrder(
+  @Request() req: any,
+  @Body('data') dataString: string,
+  @UploadedFile() file: Express.Multer.File,
+) {
+  if (!dataString) {
+    throw new BadRequestException('Data order tidak boleh kosong');
   }
+  let dto: CreateOrderDto;
+  try {
+    dto = JSON.parse(dataString);
+  } catch (error) {
+    throw new BadRequestException('Format data JSON tidak valid');
+  }
+  return this.ordersService.createOrder(
+    req.user.userId,
+    dto,
+    file,
+  );
+}
 
   @Get('my')
   @ApiOperation({ summary: 'Lihat riwayat order saya (User)' })

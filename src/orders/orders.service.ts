@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {Injectable,NotFoundException,BadRequestException,} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CloudinaryService } from 'cloudinary/cloudinary.service'; // Pastikan path ini benar sesuai struktur foldermu
-import { CreateOrderDto } from './dto/create-order.dto';
+import { CloudinaryService } from 'cloudinary/cloudinary.service';import { CreateOrderDto } from './dto/create-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -10,33 +9,40 @@ export class OrdersService {
     private cloudinaryService: CloudinaryService,
   ) {}
 
-  async createOrder(userId: number, dto: CreateOrderDto, file: Express.Multer.File) {
+  async createOrder(
+    userId: number,
+    dto: CreateOrderDto,
+    file: Express.Multer.File,
+  ) {
     // 1. Validasi file
     if (!file) {
       throw new BadRequestException('Bukti pembayaran wajib diupload (image)');
     }
 
     // 2. Pastikan cartItemIds jadi array number (antisipasi string dari form-data)
-    const cartItemIds = Array.isArray(dto.cartItemIds) 
+    const cartItemIds = Array.isArray(dto.cartItemIds)
       ? dto.cartItemIds.map((id) => Number(id))
       : [Number(dto.cartItemIds)];
 
     // 3. Cari item di keranjang
     const cartItems = await this.prisma.cartItem.findMany({
-      where: { 
-        id: { in: cartItemIds }, 
-        userId 
+      where: {
+        id: { in: cartItemIds },
+        userId,
       },
       include: { product: true },
     });
 
     if (cartItems.length === 0) {
-      throw new NotFoundException('Cart item tidak ditemukan atau sudah diproses');
+      throw new NotFoundException(
+        'Cart item tidak ditemukan atau sudah diproses',
+      );
     }
 
     // 4. Upload Bukti ke Cloudinary (pake 'as any' biar TS ga rewel)
     const uploadResult = await this.cloudinaryService.uploadImage(file);
-    const proofUrl = (uploadResult as any).secure_url || (uploadResult as any).url;
+    const proofUrl =
+      (uploadResult as any).secure_url || (uploadResult as any).url;
 
     // 5. Hitung total harga
     const totalPrice = cartItems.reduce((sum, item) => {
@@ -73,10 +79,10 @@ export class OrdersService {
 
   async findAll() {
     return this.prisma.order.findMany({
-      include: { 
-        user: true, 
-        address: true, 
-        items: { include: { product: true } } 
+      include: {
+        user: true,
+        address: true,
+        items: { include: { product: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -85,9 +91,9 @@ export class OrdersService {
   async findMyOrders(userId: number) {
     return this.prisma.order.findMany({
       where: { userId },
-      include: { 
-        address: true, 
-        items: { include: { product: true } } 
+      include: {
+        address: true,
+        items: { include: { product: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
