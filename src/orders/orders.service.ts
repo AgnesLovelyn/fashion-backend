@@ -6,7 +6,6 @@ export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
   async createOrder(userId: number, addressId: number, cartItemIds: number[]) {
-    // Ambil cart items yang dipilih
     const cartItems = await this.prisma.cartItem.findMany({
       where: { id: { in: cartItemIds }, userId },
       include: { product: true },
@@ -14,12 +13,10 @@ export class OrdersService {
 
     if (cartItems.length === 0) throw new NotFoundException('Cart item tidak ditemukan');
 
-    // Hitung total harga
     const totalPrice = cartItems.reduce((sum, item) => {
       return sum + Number(item.product.price) * item.quantity;
     }, 0);
 
-    // Buat order
     const order = await this.prisma.order.create({
       data: {
         userId,
@@ -38,7 +35,6 @@ export class OrdersService {
       include: { items: true },
     });
 
-    // Hapus cart items yang sudah diorder
     await this.prisma.cartItem.deleteMany({
       where: { id: { in: cartItemIds } },
     });
@@ -59,12 +55,12 @@ export class OrdersService {
     });
   }
 
-  async updateStatus(id: number, status: string){
-     const order = await this.prisma.order.findUnique({ where: { id } });
-  if (!order) throw new NotFoundException('Order tidak ditemukan');
-  return this.prisma.order.update({
-    where: { id },
-    data: { status: status as any },
-  });
+  async updateStatus(id: number, status: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order tidak ditemukan');
+    return this.prisma.order.update({
+      where: { id },
+      data: { status: status as any },
+    });
   }
 }
