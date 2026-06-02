@@ -5,46 +5,51 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  // User kirim pesan ke admin (terikat ke produk tertentu)
+  // FUNGSI KUNCI: Biar FE dapet tulisan 'user' atau 'admin'
+  private transformMessage(message: any) {
+    return {
+      ...message,
+      sender: message.isAdmin ? 'admin' : 'user', // Ini yang dicari FE
+    };
+  }
+
   async sendMessage(userId: number, content: string, productId?: number) {
-    return this.prisma.message.create({
+    const msg = await this.prisma.message.create({
       data: { userId, content, isAdmin: false, productId },
       include: { 
         user: { select: { name: true } },
         product: { select: { id: true, name: true } },
       },
     });
+    return this.transformMessage(msg);
   }
 
-  // Admin balas pesan ke user tertentu (terikat ke produk tertentu)
   async replyMessage(userId: number, content: string, productId?: number) {
-    return this.prisma.message.create({
+    const msg = await this.prisma.message.create({
       data: { userId, content, isAdmin: true, productId },
       include: { 
         user: { select: { name: true } },
         product: { select: { id: true, name: true } },
       },
     });
+    return this.transformMessage(msg);
   }
 
-  // User lihat percakapannya sendiri (bisa filter by produk)
   async getMyMessages(userId: number, productId?: number) {
-    return this.prisma.message.findMany({
-      where: {
-        userId,
-        ...(productId ? { productId } : {}),
-      },
+    const messages = await this.prisma.message.findMany({
+      where: { userId, ...(productId ? { productId } : {}) },
       orderBy: { createdAt: 'asc' },
       include: {
         user: { select: { name: true } },
         product: { select: { id: true, name: true } },
       },
     });
+    // PENTING: Pakai .map biar semua list pesan ada 'sender'-nya
+    return messages.map((msg) => this.transformMessage(msg));
   }
 
-  // Admin lihat semua percakapan 
   async getAllMessages(productId?: number) {
-    return this.prisma.message.findMany({
+    const messages = await this.prisma.message.findMany({
       where: productId ? { productId } : {},
       orderBy: { createdAt: 'asc' },
       include: {
@@ -52,20 +57,19 @@ export class ChatService {
         product: { select: { id: true, name: true } },
       },
     });
+    // DISINI JUGA: Biar Admin pas liat "All Chat" juga tau siapa pengirimnya
+    return messages.map((msg) => this.transformMessage(msg));
   }
 
-  // Admin lihat percakapan dengan user tertentu  (bisa filter by produk)
   async getMessagesByUser(userId: number, productId?: number) {
-    return this.prisma.message.findMany({
-      where: {
-        userId,
-        ...(productId ? { productId } : {}),
-      },
+    const messages = await this.prisma.message.findMany({
+      where: { userId, ...(productId ? { productId } : {}) },
       orderBy: { createdAt: 'asc' },
       include: {
         user: { select: { name: true, email: true } },
         product: { select: { id: true, name: true } },
       },
     });
+    return messages.map((msg) => this.transformMessage(msg));
   }
 }
