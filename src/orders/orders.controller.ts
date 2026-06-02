@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
 import { Roles } from '../jwt/roles.decorator';
 import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { CreateOrderDto } from './dto/create-order.dto';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -24,12 +25,12 @@ export class OrdersController {
   })
   createOrder(
     @Request() req: any,
-    @Body() body: { addressId: number; cartItemIds: number[] },
+    @Body() dto: CreateOrderDto,
   ) {
     return this.ordersService.createOrder(
       req.user.userId,
-      body.addressId,
-      body.cartItemIds,
+      dto.addressId,
+      dto.cartItemIds,
     );
   }
 
