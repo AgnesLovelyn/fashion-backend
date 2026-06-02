@@ -6,7 +6,7 @@ import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
 import { Roles } from '../jwt/roles.decorator';
-import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Products')
 @Controller('products')
@@ -17,8 +17,11 @@ export class ProductsController {
   ) {}
 
   @Get()
-@ApiOperation({ summary: 'Ambil semua produk' })
-findAll(
+  @ApiOperation({ summary: 'Ambil semua produk' }) 
+  
+  @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  findAll(
   @Query('category') category?: string,
   @Query('search') search?: string,
 ) {
