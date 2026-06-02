@@ -55,7 +55,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'Update status order (admin)' })
   @ApiBody({
   schema: {
-    example: { status: 'DELIVERED' }
+    example: { status: 'SUCCESS' }
   }
 })
   updateStatus(
