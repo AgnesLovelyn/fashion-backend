@@ -1,6 +1,8 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -9,30 +11,13 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register user baru' })
-  @ApiBody({
-    schema: {
-      example: {
-        name: 'John Doe',
-        email: 'john@gmail.com',
-        password: '123456',
-      },
-    },
-  })
-  register(@Body() body: { name: string; email: string; password: string }) {
-    return this.authService.register(body.name, body.email, body.password);
+  register(@Body() dto: RegisterDto){
+    return this.authService.register(dto.name, dto.email, dto.password);
   }
 
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
-  @ApiBody({
-    schema: {
-      example: {
-        email: 'john@gmail.com',
-        password: '123456',
-      },
-    },
-  })
-  login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password);
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.email, dto.password);
   }
 }

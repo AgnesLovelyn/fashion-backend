@@ -11,6 +11,7 @@ import { AddressModule } from './address/address.module';
 import { ReportsModule } from './reports/reports.module';
 import { ChatModule } from './chat/chat.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     ReportsModule,
     ChatModule,
     WishlistModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
