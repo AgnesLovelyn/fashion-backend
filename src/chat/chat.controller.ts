@@ -14,6 +14,8 @@ export class ChatController {
 
    // User kirim pesan ke admin
   @Post('send')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('USER')
   @ApiOperation({ summary: 'User kirim pesan ke admin (bisa terikat ke produk)' })
   @ApiBody({
     schema: {
@@ -33,6 +35,8 @@ export class ChatController {
 
   // User lihat percakapannya sendiri (bisa filter by produk)
   @Get('my')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('USER')
   @ApiOperation({ summary: 'User lihat pesannya sendiri, bisa filter by productId' })
   getMyMessages(
     @Request() req: any,

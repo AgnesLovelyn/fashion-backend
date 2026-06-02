@@ -16,11 +16,27 @@ import { memoryStorage } from 'multer';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Post()
+@Post()
 @UseGuards(RolesGuard)
 @Roles('USER')
 @ApiOperation({ summary: 'Buat order baru + Upload Bukti QRIS' })
 @ApiConsumes('multipart/form-data')
+@ApiBody({
+  schema: {
+      type: 'object',
+      properties: {
+        image: { // Untuk upload file bukti bayar
+          type: 'string',
+          format: 'binary',
+        },
+        data: { // Untuk data order (JSON string)
+          type: 'string',
+          description: 'JSON string dari CreateOrderDto',
+          example: '{"addressId": 1, "items": [{"variantId": 1, "quantity": 2}]}',
+        },
+      },
+    },
+})
 @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
 async createOrder(
   @Request() req: any,
@@ -44,6 +60,8 @@ async createOrder(
 }
 
   @Get('my')
+  @UseGuards(RolesGuard)
+  @Roles('USER')
   @ApiOperation({ summary: 'Lihat riwayat order saya (User)' })
   findMyOrders(@Request() req: any) {
     return this.ordersService.findMyOrders(req.user.userId);
