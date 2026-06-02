@@ -112,6 +112,7 @@ model Order {
   id          Int         @id @default(autoincrement())
   totalPrice  Decimal     @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING)
+  proofOfPayment String?  //link bukti foto cloudinary
   createdAt   DateTime    @default(now())
   
   userId      Int
