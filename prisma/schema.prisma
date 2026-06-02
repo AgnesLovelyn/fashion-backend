@@ -125,10 +125,7 @@ model Order {
 
 enum OrderStatus {
   PENDING
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  SUCCESS
 }
 
 // ─── ORDER ITEM ──────────────────────────────────

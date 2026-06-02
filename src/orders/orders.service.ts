@@ -58,4 +58,13 @@ export class OrdersService {
       include: { address: true, items: { include: { product: true } } },
     });
   }
+
+  async updateStatus(id: number, status: string){
+     const order = await this.prisma.order.findUnique({ where: { id } });
+  if (!order) throw new NotFoundException('Order tidak ditemukan');
+  return this.prisma.order.update({
+    where: { id },
+    data: { status: status as any },
+  });
+  }
 }

@@ -12,6 +12,7 @@ export class ReportsService {
 
     const revenueData = await this.prisma.order.aggregate({
       _sum: { totalPrice: true },
+      where: { status: 'SUCCESS' as any },
     });
     const totalRevenue = revenueData._sum.totalPrice ?? 0;
 
@@ -46,6 +47,7 @@ export class ReportsService {
       _count: { status: true },
     });
 
+    
     return {
       totalUsers,
       totalOrders,
