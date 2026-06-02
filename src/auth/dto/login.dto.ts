@@ -7,7 +7,7 @@ export class LoginDto {
   email!: string;
 
   @ApiProperty({ example: '12345' })
-  @IsNotEmpty({ message: 'Password tidak    kosong' })
+  @IsNotEmpty({ message: 'Password tidak kosong' })
   @MinLength(6, { message: 'Password minimal 6 karakter' })
   password!: string;
 }
