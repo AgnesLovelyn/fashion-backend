@@ -1,32 +1,15 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  UseGuards,
-  Request,
-  Param,
-  UseInterceptors,
-  UploadedFile,
-  ParseIntPipe,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards, Request, Param, UseInterceptors, UploadedFile, ParseIntPipe, BadRequestException,} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
 import { Roles } from '../jwt/roles.decorator';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBody,
-  ApiBearerAuth,
-  ApiConsumes,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes,} from '@nestjs/swagger';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -70,10 +53,22 @@ export class OrdersController {
     }
     let dto: CreateOrderDto;
     try {
-      dto = JSON.parse(dataString);
+      // 1. Ubah string jadi objek
+      const rawData = JSON.parse(dataString);
+      
+      // 2. Paksa objek jadi instance DTO supaya decorator @Type & @Transform jalan
+      dto = plainToInstance(CreateOrderDto, rawData);
+      
+      // 3. Validasi manual karena data datang dari string (bukan body json langsung)
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        throw new BadRequestException('Data JSON tidak sesuai format CreateOrderDto');
+      }
     } catch (error) {
-      throw new BadRequestException('Format data JSON tidak valid');
-    }
+  const errorMessage = error instanceof Error ? error.message : 'Format JSON tidak valid';
+  throw new BadRequestException(errorMessage);
+}
+
     return this.ordersService.createOrder(req.user.userId, dto, file);
   }
 
