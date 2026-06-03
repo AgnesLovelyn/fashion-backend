@@ -4,28 +4,29 @@ import { Transform, Type } from 'class-transformer';
 
 export class CreateOrderDto {
   @ApiProperty({ example: 1 })
-  @Type(() => Number) // Memastikan input diubah jadi number
+  @Type(() => Number)
   @IsNumber()
   addressId!: number;
 
   @ApiProperty({ 
-    example: [1, 2], 
-    type: [Number], // Memberitahu Swagger ini adalah Array of Number
-    description: 'Array ID dari item di cart' 
+    example: [35], 
+    type: [Number],
+    description: 'Array ID dari tabel CartItem' 
   })
   @Transform(({ value }) => {
-    // Trik ini supaya kalau dikirim string "1,2" atau "1" tetep jadi Array Number
+    // Kalau value-nya dateng sebagai string "[35]" atau "35"
     if (typeof value === 'string') {
-      return value.split(',').map((id) => Number(id.trim()));
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.map(Number) : [Number(parsed)];
+      } catch {
+        return value.split(',').map((id) => Number(id.trim()));
+      }
     }
-    return Array.isArray(value) ? value.map(Number) : value;
+    return Array.isArray(value) ? value.map(Number) : [Number(value)];
   })
   @IsArray()
   @ArrayMinSize(1)
   @IsNumber({}, { each: true })
   cartItemIds!: number[];
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @IsNotEmpty()
-  image: any; // Field untuk bukti transfer
 }
