@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../jwt/roles.guard';
 import { Roles } from '../jwt/roles.decorator';
 import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
+import { CreateProductDto } from './dto/create-product.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -55,22 +56,20 @@ export class ProductsController {
       },
     },
   })
-    @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
   async create(
-    @Body() body: any,
+    @Body() createProductDto: CreateProductDto, // Gunakan DTO yang sudah divalidasi
     @UploadedFile() file: Express.Multer.File,
   ) {
     let imageUrl: string | undefined;
     if (file) {
       imageUrl = await this.cloudinaryService.uploadImage(file);
     }
+
+    // PENTING: Gunakan createProductDto, bukan 'body'
+    // Kamu tidak perlu Number() manual lagi karena sudah di-handle @Transform di DTO
     return this.productsService.create({
-      ...body,
-      price: Number(body.price),
-      stock: Number(body.stock),
-      categoryId: Number(body.categoryId),
-      isNew: body.isNew === 'true',
-      isTrending: body.isTrending === 'true',
+      ...createProductDto,
       imageUrl,
     });
   }
