@@ -54,7 +54,7 @@ export class OrdersController {
           type: 'string',
           description: 'JSON string dari CreateOrderDto',
           example:
-            '{"addressId": 1, "items": [{"variantId": 1, "quantity": 2}]}',
+            '{"addressId": 1, "cartItemIds": [1, 2]}',
         },
       },
     },
